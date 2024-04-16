@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Tuple
 
 import numpy as np
+import pandas as pd
 import yaml
 from PIL import Image
 from PIL.Image import Transpose
@@ -75,10 +76,10 @@ class Raceline:
 
     @staticmethod
     def from_centerline_file(
-        filepath: pathlib.Path, delimiter: str = ",", fixed_speed: float = 1.0
+        filepath: pathlib.Path, fixed_speed: float = 1.0
     ):
         assert filepath.exists(), f"input filepath does not exist ({filepath})"
-        waypoints = np.loadtxt(filepath, delimiter=delimiter)
+        waypoints = pd.read_csv(filepath).values
         assert waypoints.shape[1] == 4, "expected waypoints as [x, y, w_left, w_right]"
 
         # fit cubic spline to waypoints
@@ -133,9 +134,9 @@ class Raceline:
         )
 
     @staticmethod
-    def from_raceline_file(filepath: pathlib.Path, delimiter: str = ";"):
+    def from_raceline_file(filepath: pathlib.Path):
         assert filepath.exists(), f"input filepath does not exist ({filepath})"
-        waypoints = np.loadtxt(filepath, delimiter=delimiter)
+        waypoints = pd.read_csv(filepath).values
         assert (
             waypoints.shape[1] == 7
         ), "expected waypoints as [s, x, y, psi, k, vx, ax]"
@@ -150,9 +151,9 @@ class Raceline:
         )
 
     @staticmethod
-    def from_our_raceline_file(filepath: pathlib.Path, delimiter: str = ","):
+    def from_our_raceline_file(filepath: pathlib.Path):
         assert filepath.exists(), f"input filepath does not exist ({filepath})"
-        waypoints = np.loadtxt(filepath, delimiter=delimiter)
+        waypoints = pd.read_csv(filepath).values
         assert waypoints.shape[1] == 5, "expected waypoints as [x, y, vx, psi, k]"
         return Raceline(
             xs=waypoints[:, 0],
@@ -279,7 +280,7 @@ class Track:
             )
 
         except Exception as ex:
-            print(f"map {track} not found\n{ex}")
+            print(f'Error loading track "{track}": {ex}')
             exit(-1)
 
 

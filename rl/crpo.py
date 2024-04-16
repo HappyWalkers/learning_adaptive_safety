@@ -9,6 +9,7 @@ from collections import deque
 from distutils.util import strtobool
 from typing import Union, Dict
 
+from tqdm import tqdm
 import gymnasium as gym
 import numpy as np
 import torch
@@ -516,7 +517,7 @@ def run_crpo(args, make_env_fn: callable, env_params: dict = {}, cbf_params: dic
     ep_sum_costs = np.zeros((args.num_envs))
     ep_steps = np.zeros((args.num_envs))
 
-    for update in range(1, num_updates + 1):
+    for update in tqdm(range(1, num_updates + 1)):
         sum_batch_costs, n_completed_episodes = 0, 0
         ep_t0 = [time.time() for _ in range(args.num_envs)]
 
@@ -790,7 +791,7 @@ def run_crpo(args, make_env_fn: callable, env_params: dict = {}, cbf_params: dic
             "train/SPS", int(global_step / (time.time() - start_time)), global_step
         )
 
-        print("SPS:", int(global_step / (time.time() - start_time)))
+        # print("SPS:", int(global_step / (time.time() - start_time)))
 
         if update % args.checkpoint_freq == 0:
             if not cp_dir.exists():
