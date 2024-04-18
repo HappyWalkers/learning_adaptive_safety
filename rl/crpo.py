@@ -443,7 +443,6 @@ def run_crpo(args, make_env_fn: callable, env_params: dict = {}, cbf_params: dic
                 evaluation=False,
                 capture_video=False,
                 log_dir=log_dir,
-                default_render_mode="human",
             )
             for i in range(args.num_envs)
         ]
@@ -467,6 +466,7 @@ def run_crpo(args, make_env_fn: callable, env_params: dict = {}, cbf_params: dic
                 evaluation=True,
                 capture_video=args.capture_video,
                 log_dir=log_dir,
+                default_render_mode="human",
             )
         ]
     )
@@ -528,7 +528,7 @@ def run_crpo(args, make_env_fn: callable, env_params: dict = {}, cbf_params: dic
             lrnow = frac * args.learning_rate
             optimizer.param_groups[0]["lr"] = lrnow
 
-        for step in range(0, args.num_steps):
+        for step in tqdm(range(0, args.num_steps)):
             global_step += 1 * args.num_envs
             obs[step] = next_obs
             dones[step] = next_done

@@ -30,7 +30,7 @@ def evaluate(
                 actions = tactions.cpu().numpy()
 
             next_obs, rewards, terminated, truncated, infos = env.step(actions)
-            # env.call("render")
+            env.call("render")
 
             if "final_info" in infos:
                 cost = [infos["final_info"][0]["cost_sum"]]
