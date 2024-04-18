@@ -98,19 +98,19 @@ class PygameEnvRenderer(EnvRenderer):
         # convert the image into gray scale
         original_img = np.array(Image.fromarray(np.uint8(original_img)).convert("L"))
         self.original_img = original_img
-        ppu_for_map = 1.0
-        ppu_for_car = render_spec.zoom_in_factor
+        map_zoom_level = 0.4
+        car_zoom_level = render_spec.zoom_in_factor
         self.map_renderers = {
-            "map": Map(map_img=original_img, zoom_level=ppu_for_map),
-            "car": Map(map_img=original_img, zoom_level=ppu_for_car),
+            "map": Map(map_img=original_img, zoom_level=map_zoom_level),
+            "car": Map(map_img=original_img, zoom_level=car_zoom_level),
         }
         self.map_canvases = {
             k: pygame.Surface((map_r.track_map.shape[0], map_r.track_map.shape[1]))
             for k, map_r in self.map_renderers.items()
         }
         self.ppus = {
-            "map": ppu_for_map,
-            "car": ppu_for_car,
+            "map": 1 / map_zoom_level,
+            "car": 1 / car_zoom_level,
         }
 
         # callbacks for custom visualization, called at every rendering step
