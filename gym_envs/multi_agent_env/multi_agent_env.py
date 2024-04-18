@@ -434,7 +434,7 @@ class MultiAgentRaceEnv(gymnasium.Env):
         }
 
         # debug
-        # print(f"[debug - env {self._params['name']}] poses: {poses}")
+        print(f"[debug - env {self._params['name']}] poses: {poses}")
         return obs, info
 
     def step(self, action: Union[np.ndarray, Dict[str, float]]):

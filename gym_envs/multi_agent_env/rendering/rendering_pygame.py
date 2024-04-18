@@ -10,6 +10,7 @@ import numpy as np
 import pygame
 import yaml
 from PIL import Image, ImageColor
+import matplotlib.pyplot as plt
 
 from gym_envs.multi_agent_env.common.track import Track
 from gym_envs.multi_agent_env.rendering.objects import (
@@ -41,6 +42,7 @@ class PygameEnvRenderer(EnvRenderer):
         self.window = None
         self.canvas = None
 
+        self.track = track
         self.render_spec = render_spec
         self.render_mode = render_mode
         self.render_fps = render_fps
@@ -93,18 +95,22 @@ class PygameEnvRenderer(EnvRenderer):
         original_img = np.array(
             Image.open(original_img).transpose(Image.FLIP_TOP_BOTTOM)
         ).astype(np.float64)
-
+        # convert the image into gray scale
+        original_img = np.array(Image.fromarray(np.uint8(original_img)).convert("L"))
+        self.original_img = original_img
+        ppu_for_map = 1.0
+        ppu_for_car = render_spec.zoom_in_factor
         self.map_renderers = {
-            "map": Map(map_img=original_img, zoom_level=0.4),
-            "car": Map(map_img=original_img, zoom_level=render_spec.zoom_in_factor),
+            "map": Map(map_img=original_img, zoom_level=ppu_for_map),
+            "car": Map(map_img=original_img, zoom_level=ppu_for_car),
         }
         self.map_canvases = {
             k: pygame.Surface((map_r.track_map.shape[0], map_r.track_map.shape[1]))
             for k, map_r in self.map_renderers.items()
         }
         self.ppus = {
-            k: original_img.shape[0] / map_r.track_map.shape[0]
-            for k, map_r in self.map_renderers.items()
+            "map": ppu_for_map,
+            "car": ppu_for_car,
         }
 
         # callbacks for custom visualization, called at every rendering step
@@ -163,6 +169,10 @@ class PygameEnvRenderer(EnvRenderer):
 
         if self.draw_flag:
             self.map_renderers[self.active_map_renderer].render(self.map_canvas)
+
+            # draw centerline
+            centerline = np.array([self.track.centerline.xs, self.track.centerline.ys]).T
+            self.render_points(centerline)
 
             # draw cars
             for i in range(len(self.agent_ids)):

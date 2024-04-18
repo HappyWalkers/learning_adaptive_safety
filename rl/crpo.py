@@ -443,6 +443,7 @@ def run_crpo(args, make_env_fn: callable, env_params: dict = {}, cbf_params: dic
                 evaluation=False,
                 capture_video=False,
                 log_dir=log_dir,
+                default_render_mode="human",
             )
             for i in range(args.num_envs)
         ]
