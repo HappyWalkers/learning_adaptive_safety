@@ -1,8 +1,8 @@
 from typing import Tuple
-
 import numpy as np
 
 from gym_envs.multi_agent_env.rewards.reward_fn import RewardFn
+from config import Config
 
 
 class ProgressRewardFn(RewardFn):
@@ -75,18 +75,25 @@ class MultiPlayersSparseRelDistanceRewardFn(RewardFn):
         ), "state/next_state must contain ego observation"
         assert len(opp_ids) > 0, "state/next_state must contain npc information"
 
-        tot_rel_distance = 0
-        for opp_id in opp_ids:
-            rel_distance = (
-                next_state["ego"]["frenet_coords"][0]
-                - next_state[opp_id]["frenet_coords"][0]
-            )
-            rel_distance = np.tanh(
-                rel_distance / 5.0
-            )  # to normalize the reward within reasonable range, +-1 per agent
-            tot_rel_distance += rel_distance
+        reward = 0
 
-        reward = tot_rel_distance if done else 0.0
+        # at the end of the race
+        # reward = avg of relative distances to all opponents
+        if True:
+            for opp_id in opp_ids:
+                rel_distance = (
+                    next_state["ego"]["frenet_coords"][0]
+                    - next_state[opp_id]["frenet_coords"][0]
+                )
+                reward += Config.PPO.relative_distance_to_reward_func(rel_distance)
+
+            reward = reward / len(opp_ids)
+
+        # if the ego car collides with any of the opponents
+        # punish the ego car
+        if next_state['ego']['collision']:
+            reward = Config.PPO.reward_at_collision
+        
         return reward
 
 

@@ -20,6 +20,7 @@ from gym_envs.multi_agent_env.common.utils import (
     zero_2_2pi,
 )
 from gym_envs.multi_agent_env.common.track import Track, Raceline
+from config import Config
 
 
 class LatticePlanner(Planner):
@@ -290,6 +291,7 @@ class LatticePlanner(Planner):
             self.prev_opp_pose,
             self.time_interval,
         )
+        collision_cost = np.zeros_like(collision_cost)
         self.step_all_cost["collision_cost"] = collision_cost
 
         cost = np.repeat(cost, k).reshape(n, k)
@@ -304,7 +306,7 @@ class LatticePlanner(Planner):
                 for ss in self.step_all_cost.values()
             ]
         ).T
-        # self._debug_trajectories_scores(observation=observation, trajs=all_traj, final_scores=final_scores, score_arrays=score_arrays)
+        # self._debug_trajectories_scores(trajs=all_traj, final_scores=final_scores, score_arrays=score_arrays, ego_pose=ego_pose, opp_poses=opp_poses)
 
         return cost
 
@@ -677,7 +679,7 @@ cost: np.ndarray, (n, 1)
 """
 
 
-@njit(cache=True)
+# @njit(cache=True)
 def get_follow_optim_cost(
     traj,
     traj_clothoid,
@@ -688,7 +690,7 @@ def get_follow_optim_cost(
     map_metainfo=None,
     lattice_metainfo=None,
 ):
-    scale = 0.1
+    scale = Config.Lattice_Planner.follow_optim_cost_scale
 
     rows, cols, _ = lattice_metainfo
     idx_diff = np.empty(0)
@@ -727,7 +729,7 @@ def get_all_curvature(traj, traj_clothoid):
     return traj_k.reshape(traj_k.shape[0], traj_k.shape[1], 1)
 
 
-@njit(cache=True)
+# @njit(cache=True)
 def get_length_cost(
     traj,
     traj_clothoid,
@@ -738,8 +740,7 @@ def get_length_cost(
     map_metainfo=None,
     lattice_metainfo=None,
 ):
-    scale = 0.5
-    return traj_clothoid[:, -1] * scale
+    return traj_clothoid[:, -1] * Config.Lattice_Planner.length_cost_scale
 
 
 def get_similarity_cost(
@@ -755,7 +756,6 @@ def get_similarity_cost(
     """
     the stored prev_traj is in local frame
     """
-    scale = 0.25
 
     # first iteration: prev trajectory initialized to zero
     if abs(np.sum(prev_traj)) < 1e-6:
@@ -764,11 +764,11 @@ def get_similarity_cost(
     local_traj = traj_global2local(ego_pose, traj[..., :2])
     diff = local_traj - prev_traj
     cost = diff * diff
-    cost = np.sum(cost, axis=(1, 2)) * scale
+    cost = np.sum(cost, axis=(1, 2)) * Config.Lattice_Planner.similarity_cost_scale
     return cost
 
 
-@njit(cache=True)
+# @njit(cache=True)
 def get_map_collision(
     traj,
     traj_clothoid,
@@ -792,7 +792,7 @@ def get_map_collision(
     cost = []
     for traj_collision in collisions:
         if np.any(traj_collision):
-            cost.append(3000.0)
+            cost.append(Config.Lattice_Planner.map_collision_cost)
         else:
             cost.append(0.0)
     return np.array(cost)
@@ -802,9 +802,9 @@ def get_map_collision(
 def get_obstacle_collision_with_v(
     traj, traj_clothoid, v_lattice, opp_poses, prev_oppo_pose, dt=None
 ):
-    max_cost = 10.0
-    min_cost = 10.0
-    width, length = 0.31, 0.58
+    max_cost = Config.Lattice_Planner.dynamic_collision_cost_max
+    min_cost = Config.Lattice_Planner.dynamic_collision_cost_min
+    width, length = Config.Car.width, Config.Car.length
     n, m, _ = traj.shape
     k = v_lattice.shape[1]
     cost = np.zeros((n, 1))
@@ -828,25 +828,25 @@ def get_obstacle_collision_with_v(
         return cost
     else:
         cost = np.repeat(cost, k).reshape(n, k)
-        # calculate opp pose, assume only one opponent
-        oppo_pose = opp_poses[0][:2]
-        prev_opp_pose = prev_oppo_pose[0]
-        opp_v = (oppo_pose - prev_opp_pose) / float(dt)  # (2, 1)
-        # print(opp_v)
-        traj_heading = traj[:, -1, 3]  # (n, )
-        traj_heading_vec = np.vstack(
-            (np.cos(traj_heading), np.sin(traj_heading))
-        ).T  # (n, 2)
-        opp_v_proj = np.dot(traj_heading_vec, opp_v.reshape(2, 1))  # (n, 1)
-        opp_v_proj = np.repeat(opp_v_proj, k).reshape(n, k)  # (n, k)
-        v_diff = v_lattice - opp_v_proj
-        cost = cost * v_diff
-        for i in range(n):
-            for j in range(k):
-                if cost[i][j] < 0:
-                    cost[i][j] = 1.0
-                elif cost[i][j] < 1.2:
-                    cost[i][j] = 1.2
+        # # calculate opp pose, assume only one opponent
+        # oppo_pose = opp_poses[0][:2]
+        # prev_opp_pose = prev_oppo_pose[0]
+        # opp_v = (oppo_pose - prev_opp_pose) / float(dt)  # (2, 1)
+        # # print(opp_v)
+        # traj_heading = traj[:, -1, 3]  # (n, )
+        # traj_heading_vec = np.vstack(
+        #     (np.cos(traj_heading), np.sin(traj_heading))
+        # ).T  # (n, 2)
+        # opp_v_proj = np.dot(traj_heading_vec, opp_v.reshape(2, 1))  # (n, 1)
+        # opp_v_proj = np.repeat(opp_v_proj, k).reshape(n, k)  # (n, k)
+        # v_diff = v_lattice - opp_v_proj
+        # cost = cost * v_diff
+        # for i in range(n):
+        #     for j in range(k):
+        #         if cost[i][j] < 0:
+        #             cost[i][j] = 1.0
+        #         elif cost[i][j] < 1.2:
+        #             cost[i][j] = 1.2
     return cost
 
 

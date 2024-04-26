@@ -14,7 +14,7 @@ env_params:
     - "on_collision"
     - "on_any_cross_finish_line"
     - "on_timeout"
-  timeout: 15.0
+  timeout: 100
   reset_mode: "section0.0-0.4_back"
   reward: "sparse_rel_progress"
   control_freq: 2

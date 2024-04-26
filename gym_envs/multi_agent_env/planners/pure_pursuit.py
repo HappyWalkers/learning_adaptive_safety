@@ -82,7 +82,7 @@ class PurePursuitPlanner(Planner):
             "vgain": 1.0,
             "vgain_std": 0.0,
             "min_speed": 0.0,
-            "max_speed": 10.0,
+            "max_speed": 7.0,
             "max_steering": 1.0,
         }
         self.params.update(params)
