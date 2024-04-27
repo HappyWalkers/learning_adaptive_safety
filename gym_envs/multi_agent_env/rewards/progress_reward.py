@@ -79,7 +79,7 @@ class MultiPlayersSparseRelDistanceRewardFn(RewardFn):
 
         # at the end of the race
         # reward = avg of relative distances to all opponents
-        if done:
+        if True:
             for opp_id in opp_ids:
                 rel_distance = (
                     next_state["ego"]["frenet_coords"][0]
@@ -92,7 +92,7 @@ class MultiPlayersSparseRelDistanceRewardFn(RewardFn):
         # if the ego car collides with any of the opponents
         # punish the ego car
         if next_state['ego']['collision']:
-            reward += Config.PPO.reward_at_collision
+            reward += Config.PPO.reward_at_collision()
         
         return reward
 

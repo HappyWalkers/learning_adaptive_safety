@@ -10,7 +10,6 @@ env_params:
   reset_mode: "section0.0-0.4_back"
   reward: "sparse_rel_progress"
   control_freq: 2
-  planning_freq: 10
   local_path_generation: "auto_lattice"
   vehicle_features:
     - "pose"

@@ -33,7 +33,7 @@ def make_f110_base_env(
     reward = env_params["reward"]
     reset_mode = env_params["reset_mode"]
     control_freq = env_params["control_freq"]
-    planning_freq = env_params["planning_freq"]
+    planning_freq = Config.Env.planning_freq
 
     assert planning_freq % control_freq == 0, (
         "planning_freq must be divisible by control_freq,"
@@ -114,7 +114,7 @@ def make_f110_env(
 
         # planning-action wrapper
         control_freq = env_params["control_freq"]
-        planning_freq = env_params["planning_freq"]
+        planning_freq = Config.Env.planning_freq
         frame_skip = planning_freq // control_freq
         if (
             env_params["local_path_generation"]

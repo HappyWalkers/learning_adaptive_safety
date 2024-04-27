@@ -74,9 +74,12 @@ class Config:
 
     class PPO:
         relative_distance_to_reward_func = lambda rel_distance: np.tanh(rel_distance / 5.0)
-        reward_at_collision: float = -1.0
 
-        num_steps = 256
+        @classmethod
+        def reward_at_collision(self):
+            return -10 * Config.Env.timeout * Config.Env.planning_freq
+
+        num_steps = 2048
 
     class Car:
         width = 0.31
@@ -86,7 +89,9 @@ class Config:
         reset_pose_dis_min = 2.0
         reset_pose_dis_max = 2.0
 
-        timeout = 10
+        timeout = 8
+
+        planning_freq = 10
 
     class Pure_Pursuit_Planner:
         params = {
