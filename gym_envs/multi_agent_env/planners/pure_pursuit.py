@@ -18,6 +18,8 @@ try:
 except:
     pass
 
+from config import Config
+
 
 @njit(fastmath=False, cache=True)
 def get_actuation(
@@ -74,17 +76,7 @@ class PurePursuitPlanner(Planner):
         super().__init__(agent_id=agent_id)
 
         # pure pursuit params
-        self.params = {
-            "lookahead_distance": 1.5,
-            "max_reacquire": 20.0,
-            "wb": 0.33,
-            "fixed_speed": None,
-            "vgain": 1.0,
-            "vgain_std": 0.0,
-            "min_speed": 0.0,
-            "max_speed": 7.0,
-            "max_steering": 1.0,
-        }
+        self.params = Config.Pure_Pursuit_Planner.params
         self.params.update(params)
         self.vgain = None
 
@@ -108,7 +100,6 @@ class PurePursuitPlanner(Planner):
         std = self.params["vgain_std"]
 
         self.vgain = np.random.normal(mu, std)
-        self.vgain = np.clip(self.vgain, 0.0, 1.0)  # sanity check
 
     def update_raceline(self, raceline: Raceline):
         self.waypoints = np.stack(

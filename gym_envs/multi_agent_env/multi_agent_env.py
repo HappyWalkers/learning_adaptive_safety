@@ -451,6 +451,7 @@ class MultiAgentRaceEnv(gymnasium.Env):
         # step the environment
         control_frequency = self._params["simulation"]["control_frequency"]
         reward = 0.0
+        # print(f"action: {flatten_action}")
         for _ in range(control_frequency):
             original_obs, r, done, original_info = self.env.step(flatten_action)
             reward += r

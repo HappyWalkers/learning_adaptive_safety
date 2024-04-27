@@ -242,7 +242,7 @@ class Track:
         return progress
 
     @staticmethod
-    def from_track_name(track: str):
+    def from_track_name(track: str, fixed_speed: float = 1.0):
         try:
             track_dir = find_track_dir(track)
             # load track spec
@@ -261,11 +261,11 @@ class Track:
 
             # load centerline and raceline
             centerline = Raceline.from_centerline_file(
-                track_dir / f"{track}_centerline.csv"
+                track_dir / f"{track}_centerline.csv", fixed_speed=fixed_speed
             )
             if (track_dir / f"{track}_raceline.csv").exists():
                 raceline = Raceline.from_raceline_file(
-                    track_dir / f"{track}_raceline.csv"
+                    track_dir / f"{track}_raceline.csv", fixed_speed=fixed_speed
                 )
             else:
                 raceline = centerline

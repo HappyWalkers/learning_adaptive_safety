@@ -32,35 +32,7 @@ class LatticePlanner(Planner):
         render_wps_rgb: tuple = (183, 193, 222),
     ):
         super().__init__(agent_id=agent_id)
-        self.params = {
-            "wb": 0.33,
-            "lh_grid_lb": 0.6,
-            "lh_grid_ub": 1.2,
-            "lh_grid_rows": 3,
-            "lat_grid_lb": -1.5,
-            "lat_grid_ub": 1.5,
-            "lat_grid_cols": 11,
-            "weights": 7,
-            "score_names": [
-                "curvature_cost",
-                "get_length_cost",
-                "get_similarity_cost",
-                "get_follow_optim_cost",
-                "get_map_collision",
-                "abs_v_cost",
-                "collision_cost",
-            ],
-            # "weights": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-            "traj_v_span_min": 0.2,
-            "traj_v_span_max": 1.0,
-            "traj_v_span_num": 5,
-            "traj_points": 20,
-            "vgain": 0.9,
-            "collision_thres": 0.3,
-            "planning_frequency": 10,
-            "tracker": "advanced_pure_pursuit",
-            "tracker_params": {"vgain": 1.0},
-        }
+        self.params = Config.Lattice_Planner.params
         self.params.update(params)
 
         # load waypoints
@@ -792,7 +764,7 @@ def get_map_collision(
     cost = []
     for traj_collision in collisions:
         if np.any(traj_collision):
-            cost.append(Config.Lattice_Planner.map_collision_cost)
+            cost.append(Config.Lattice_Planner.map_collision_cost_for_one_lane)
         else:
             cost.append(0.0)
     return np.array(cost)

@@ -21,6 +21,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from gym_envs.multi_agent_env.planners.planner import Planner
 from rl.evaluation import evaluate
+from config import Config
 
 
 def make_crpo_parser():
@@ -107,7 +108,7 @@ def make_crpo_parser():
     parser.add_argument(
         "--num-steps",
         type=int,
-        default=2048,
+        default=Config.PPO.num_steps,
         help="the number of steps to run in each environment per policy rollout",
     )
     parser.add_argument(

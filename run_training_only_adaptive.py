@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     args.env_id = base_env_id
     make_env = make_env_factory(env_id=args.env_id)
-
+        
     crpo.run_crpo(
         make_env_fn=make_env,
         env_params=env_params,

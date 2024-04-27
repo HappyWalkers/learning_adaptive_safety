@@ -7,6 +7,8 @@ import numpy as np
 from gym_envs.multi_agent_env.common.track import Track
 import gymnasium as gym
 
+from config import Config
+
 Pose = Union[Tuple[float, float, float], np.ndarray]
 
 DEBUG_RESET = False
@@ -297,12 +299,9 @@ class PositionAroundWaypoint(PositioningFn):
         :return: min, max starting distance between agents
         """
         min_dist, max_dist = (
-            1.5,
-            2.0,
-        )  # default for small tracks, with less than 10m centerline
-        if track_length > 15:
-            min_dist *= 2  # double the range for large-enough tracks
-            max_dist *= 2
+            Config.Env.reset_pose_dis_min,
+            Config.Env.reset_pose_dis_max,
+        ) 
         return min_dist, max_dist
 
 

@@ -14,7 +14,7 @@ from gym_envs.wrappers.action_wrappers import (
     WaypointActionWrapper,
 )
 from gym_envs.wrappers.observation_wrappers import VehicleTrackObservationWrapper
-
+from config import Config
 
 def make_f110_base_env(
     env_id,
@@ -26,7 +26,8 @@ def make_f110_base_env(
 ):
     track_name = env_params["track_name"]
     opp_planner = env_params["opp_planner"]
-    opp_params = env_params["opp_params"]
+    opp_params = Config.Pure_Pursuit_Planner.v_gain_and_std
+    
     termination_types = env_params["termination_types"]
     timeout = env_params["timeout"]
     reward = env_params["reward"]
@@ -40,7 +41,7 @@ def make_f110_base_env(
     )
 
     if opp_planner is not None:
-        track = Track.from_track_name(track_name)
+        track = Track.from_track_name(track_name, fixed_speed=Config.Pure_Pursuit_Planner.fixed_speed)
         npc_planners = []
         for i, (opp_plan, opp_par) in enumerate(zip(opp_planner, opp_params)):
             opp = planner_factory(

@@ -5,11 +5,6 @@ env_params:
   opp_planner:
     - "pp"
     - "pp"
-  opp_params:
-    - vgain: 0.7
-      vgain_std: 0.05
-    - vgain: 0.7
-      vgain_std: 0.05
   termination_types:
     - "on_collision"
     - "on_any_cross_finish_line"
