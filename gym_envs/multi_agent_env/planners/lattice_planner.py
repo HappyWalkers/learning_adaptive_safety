@@ -263,7 +263,7 @@ class LatticePlanner(Planner):
             self.prev_opp_pose,
             self.time_interval,
         )
-        collision_cost = np.zeros_like(collision_cost)
+        # collision_cost = np.zeros_like(collision_cost)
         self.step_all_cost["collision_cost"] = collision_cost
 
         cost = np.repeat(cost, k).reshape(n, k)

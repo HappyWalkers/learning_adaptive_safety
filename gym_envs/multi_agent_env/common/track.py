@@ -265,7 +265,7 @@ class Track:
             )
             if (track_dir / f"{track}_raceline.csv").exists():
                 raceline = Raceline.from_raceline_file(
-                    track_dir / f"{track}_raceline.csv", fixed_speed=fixed_speed
+                    track_dir / f"{track}_raceline.csv"
                 )
             else:
                 raceline = centerline

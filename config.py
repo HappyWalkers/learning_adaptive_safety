@@ -24,7 +24,7 @@ class Config:
             "dt": 0.1,
             "track_width": 3.00,
             "wall_margin": 0.5,
-            "safe_distance": 1.0,
+            "safe_distance": 0.5,
             # additional params, used only in opt-decay cbf (odcbf)
             "odcbf_gamma_range": [0.0, 1.0],  # range of gamma, for optimal-decay cbf
             "odcbf_gamma_penalty": 1e4,  # penalty for deviation from nominal gamma, for optimal-decay cbf
@@ -84,7 +84,9 @@ class Config:
 
     class Env:
         reset_pose_dis_min = 2.0
-        reset_pose_dis_max = 4.0
+        reset_pose_dis_max = 2.0
+
+        timeout = 10
 
     class Pure_Pursuit_Planner:
         params = {
@@ -100,7 +102,6 @@ class Config:
         }
         v_gain_and_std = [
             {'vgain': 0.7, 'vgain_std': 0.05}, 
-            {'vgain': 0.7, 'vgain_std': 0.05}
         ]
         
         fixed_speed = 5.0

@@ -4,12 +4,9 @@ env_params:
   track_name: "General1"
   opp_planner:
     - "pp"
-    - "pp"
   termination_types:
     - "on_collision"
-    - "on_any_cross_finish_line"
     - "on_timeout"
-  timeout: 100
   reset_mode: "section0.0-0.4_back"
   reward: "sparse_rel_progress"
   control_freq: 2

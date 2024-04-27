@@ -29,7 +29,7 @@ def make_f110_base_env(
     opp_params = Config.Pure_Pursuit_Planner.v_gain_and_std
     
     termination_types = env_params["termination_types"]
-    timeout = env_params["timeout"]
+    timeout = Config.Env.timeout
     reward = env_params["reward"]
     reset_mode = env_params["reset_mode"]
     control_freq = env_params["control_freq"]
