@@ -10,6 +10,7 @@ class Config:
         frenet_coordinate_diff_oppo_ego_limit_min :float = 0.0
         frenet_coordinate_diff_oppo_ego_limit_max :float = 5.0
 
+        max_brake_lateral = 1.0
         max_brake_longitudinal_func = lambda v: 1 / (1 + v)
 
         follow_action_optmization_wall_slack_scale: float = 1000

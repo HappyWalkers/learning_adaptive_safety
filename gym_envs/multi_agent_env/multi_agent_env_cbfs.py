@@ -83,12 +83,12 @@ def f1tenth_cbf_project(env, state, action, gammas):
         if Config.CBF.frenet_coordinate_diff_oppo_ego_limit_min < os - s < Config.CBF.frenet_coordinate_diff_oppo_ego_limit_max:
             obstacle_states.append([ox, oy, os, oey, opsi, ov])
 
-    # # extract track info
-    # k_s = env.track.centerline.spline.calc_curvature(s=s)
-    # psi_s = env.track.centerline.spline.calc_yaw(s=s)
+    # extract track info
+    k_s = env.track.centerline.spline.calc_curvature(s=s)
+    psi_s = env.track.centerline.spline.calc_yaw(s=s)
 
-    # # slacks
-    # wall_slack = opti.variable(2)
+    # slacks
+    wall_slack = opti.variable(2)
 
     if len(obstacle_states) > 0:
         # obstacle slacks
@@ -98,41 +98,41 @@ def f1tenth_cbf_project(env, state, action, gammas):
     new_x = x + dt * (v * np.cos(psi) - v * np.sin(psi) * u[1])
     new_y = y + dt * (v * np.sin(psi) + v * np.cos(psi) * u[1])
 
-    # denom = 1 - ey * k_s
-    # new_s = s + dt * (
-    #     v * np.cos(psi - psi_s) / denom - v * np.sin(psi - psi_s) / denom * u[1]
-    # )
-    # new_ey = ey + dt * (v * np.sin(psi - psi_s) + v * np.cos(psi - psi_s) * u[1])
+    denom = 1 - ey * k_s
+    new_s = s + dt * (
+        v * np.cos(psi - psi_s) / denom - v * np.sin(psi - psi_s) / denom * u[1]
+    )
+    new_ey = ey + dt * (v * np.sin(psi - psi_s) + v * np.cos(psi - psi_s) * u[1])
 
     new_v = v + dt * u[0]
     new_psi = psi + dt * (v / lr) * u[1]
 
     # braking accelerations lat and long
-    # max_brake_lat = new_max_brake_lat = 1.0  # fixed
+    max_brake_lat = new_max_brake_lat = Config.CBF.max_brake_lateral  # fixed
     max_brake_long = Config.CBF.max_brake_longitudinal_func(v)  # velocity dependent
     new_max_brake_long = Config.CBF.max_brake_longitudinal_func(new_v)  # velocity dependent
 
-    # # wall constraint
-    # track_halfw, safety_margin = params["track_width"] / 2, params["wall_margin"]
+    # wall constraint
+    track_halfw, safety_margin = params["track_width"] / 2, params["wall_margin"]
 
-    # dey = v * np.sin(psi - psi_s) + v * np.cos(psi - psi_s) * u[1]
-    # new_dey = new_v * np.sin(psi - psi_s) + v * np.cos(psi - psi_s) * u[1]
+    dey = v * np.sin(psi - psi_s) + v * np.cos(psi - psi_s) * u[1]
+    new_dey = new_v * np.sin(psi - psi_s) + v * np.cos(psi - psi_s) * u[1]
 
-    # hx_left = hx_left_wall(ey, dey, track_halfw, max_brake_lat, safety_margin)
-    # hx_left_next = hx_left_wall(
-    #     new_ey, new_dey, track_halfw, new_max_brake_lat, safety_margin
-    # )
+    hx_left = hx_left_wall(ey, dey, track_halfw, max_brake_lat, safety_margin)
+    hx_left_next = hx_left_wall(
+        new_ey, new_dey, track_halfw, new_max_brake_lat, safety_margin
+    )
 
-    # opti.subject_to(hx_left_next - hx_left + wall_slack[0] >= -gammas[0] * hx_left)
-    # opti.subject_to(wall_slack[0] >= 0)
+    opti.subject_to(hx_left_next - hx_left + wall_slack[0] >= -gammas[0] * hx_left)
+    opti.subject_to(wall_slack[0] >= 0)
 
-    # hx_right = hx_right_wall(ey, dey, track_halfw, max_brake_lat, safety_margin)
-    # hx_right_next = hx_right_wall(
-    #     new_ey, new_dey, track_halfw, new_max_brake_lat, safety_margin
-    # )
+    hx_right = hx_right_wall(ey, dey, track_halfw, max_brake_lat, safety_margin)
+    hx_right_next = hx_right_wall(
+        new_ey, new_dey, track_halfw, new_max_brake_lat, safety_margin
+    )
 
-    # opti.subject_to(hx_right_next - hx_right + wall_slack[1] >= -gammas[0] * hx_right)
-    # opti.subject_to(wall_slack[1] >= 0)
+    opti.subject_to(hx_right_next - hx_right + wall_slack[1] >= -gammas[0] * hx_right)
+    opti.subject_to(wall_slack[1] >= 0)
 
     # obstacle constraints
     hx_obss = []
@@ -180,7 +180,7 @@ def f1tenth_cbf_project(env, state, action, gammas):
     obj = (
         a_scale * (u[0] - accx) ** 2
         + beta_scale * (u[1] - beta) ** 2
-        # + Config.CBF.follow_action_optmization_wall_slack_scale * casadi.sum1(wall_slack)
+        + Config.CBF.follow_action_optmization_wall_slack_scale * casadi.sum1(wall_slack)
     )
     if len(obstacle_states) > 0:
         obj += Config.CBF.follow_action_optmization_obstacle_slack_scale * casadi.sum1(obstacle_slacks)
@@ -197,10 +197,10 @@ def f1tenth_cbf_project(env, state, action, gammas):
         safe_input = sol.value(u)
 
         dict_infos = {
-            # "hx_left": sol.value(hx_left),
-            # "hx_right": sol.value(hx_right),
-            # "slack_left": sol.value(wall_slack[0]),
-            # "slack_right": sol.value(wall_slack[1]),
+            "hx_left": sol.value(hx_left),
+            "hx_right": sol.value(hx_right),
+            "slack_left": sol.value(wall_slack[0]),
+            "slack_right": sol.value(wall_slack[1]),
             "obj": sol.value(obj),
             "gammas": sol.value(gammas),
             "safe_gammas": sol.value(gammas),
@@ -214,10 +214,10 @@ def f1tenth_cbf_project(env, state, action, gammas):
         safe_input = accx, beta
 
         dict_infos = {
-            # "hx_left": 0.0,
-            # "hx_right": 0.0,
-            # "slack_left": 0.0,
-            # "slack_right": 0.0,
+            "hx_left": 0.0,
+            "hx_right": 0.0,
+            "slack_left": 0.0,
+            "slack_right": 0.0,
             "obj": 0.0,
             "gammas": gammas,
             "safe_gammas": gammas,
