@@ -407,6 +407,7 @@ class MultiAgentRaceEnv(gymnasium.Env):
         original_obs, reward, done, original_info = self.env.reset(
             poses=np.array(poses)
         )
+        breakpoint()
 
         # update observations and internal variables
         self._last_frenet_s = {
