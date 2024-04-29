@@ -1,13 +1,19 @@
+import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from ackermann_msgs.msg import AckermannDrive, AckermannDriveStamped
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 from typing import List
 import numpy as np
+import time
 
-class F110_ROS_Wrapper(Node):
+
+rclpy.init()
+
+class F110ROSWrapper(Node):
     '''
     This class is a wrapper around the F110 gym environment.
     It's used to interact with the gym_bridge or the real car through ROS.
@@ -24,13 +30,13 @@ class F110_ROS_Wrapper(Node):
     '''
     def __init__(
             self,
-            num_agents = 1,
+            num_agents = 2,
             ego_idx = 0,
-            odom_topic_list = ['/ego_racecar/odom1', '/ego_racecar/odom2'],
-            scan_topic_list = ['/scan1', '/scan2'],
-            drive_topic_list = ['/drive1', '/drive2'],
-            reset_topic_list = ['/reset1', '/reset2'],
-            reset_done_topic_list = ['/reset_done1', '/reset_done2'],
+            odom_topic_list = ['/ego_racecar/odom', '/opp_racecar/odom'],
+            scan_topic_list = ['/scan', '/opp_scan'],
+            drive_topic_list = ['/drive', '/opp_drive'],
+            reset_topic_list = ['/initialpose', '/opp_initialpose'],
+            reset_done_topic_list = ['/reset_done', '/opp_reset_done'],
             time_step = 0.01,
             ):
         super().__init__('f110_ros_wrapper')
@@ -62,9 +68,9 @@ class F110_ROS_Wrapper(Node):
 
         # container for holding observations
         self.last_scan_list: List[LaserScan] = [None] * self.num_agents
-        self.last_scan_timestamp_list = [None] * self.num_agents
+        self.last_scan_timestamp_list = [self.get_clock().now()] * self.num_agents
         self.last_odom_list: List[Odometry] = [None] * self.num_agents
-        self.last_odom_timestamp_list = [None] * self.num_agents
+        self.last_odom_timestamp_list = [self.get_clock().now()] * self.num_agents
         
 
         # Create publisher for publishing actions
@@ -78,7 +84,7 @@ class F110_ROS_Wrapper(Node):
         self.reset_pub_list = []
         for reset_topic in reset_topic_list:
             self.reset_pub_list.append(self.create_publisher(
-                PoseStamped, reset_topic, 10
+                PoseWithCovarianceStamped, reset_topic, 10
             ))
         
         # Create subscriber for getting reset-done message from human driver
@@ -90,7 +96,7 @@ class F110_ROS_Wrapper(Node):
 
         # Container for holding reset-done status
         self.reset_done_status_list = [None] * self.num_agents
-        self.reset_done_timestamp_list = [None] * self.num_agents
+        self.reset_done_timestamp_list = [self.get_clock().now()] * self.num_agents
 
 
     def scan_callback(self, agent_idx: int):
@@ -99,7 +105,7 @@ class F110_ROS_Wrapper(Node):
             self.last_scan_timestamp_list[agent_idx] = self.get_clock().now()
         return scan_callback
     
-    def odom_callbac(self, agent_idx: int):
+    def odom_callback(self, agent_idx: int):
         def odom_callback(self, odom_msg: Odometry):
             self.last_odom_list[agent_idx] = odom_msg
             self.last_odom_timestamp_list[agent_idx] = self.get_clock().now()
@@ -137,7 +143,10 @@ class F110_ROS_Wrapper(Node):
             self.drive_pub_list[i].publish(drive_msg)
 
         # wait for the next observation from each agent
+        is_print = True
         while self.not_all_new_obs(action_sent_timestamp):
+            print("step is waiting for the next observation") if is_print else None; is_print = False
+            time.sleep(self.time_step / 100)
             pass
 
         # build the returned values
@@ -209,25 +218,31 @@ class F110_ROS_Wrapper(Node):
         for i in range(self.num_agents):
             drive_msg = AckermannDriveStamped()
             drive_msg.header.stamp = self.get_clock().now().to_msg()
-            drive_msg.drive.speed = 0
+            drive_msg.drive.speed = 0.0
             self.drive_pub_list[i].publish(drive_msg)
 
         # send the desired pose to the human driver
         desired_pose_sent_timestamp = self.get_clock().now()
         for i in range(self.num_agents):
-            pose_msg = PoseStamped()
-            pose_msg.header.stamp = self.get_clock().now().to_msg()
-            pose_msg.pose.position.x = poses[i][0]
-            pose_msg.pose.position.y = poses[i][1]
-            pose_msg.pose.orientation.z = poses[i][2]
-            self.reset_pub_list[i].publish(pose_msg)
+            pose_with_covariance_msg = PoseWithCovarianceStamped()
+            pose_with_covariance_msg.header.stamp = self.get_clock().now().to_msg()
+            pose_with_covariance_msg.pose.pose.position.x = poses[i][0]
+            pose_with_covariance_msg.pose.pose.position.y = poses[i][1]
+            pose_with_covariance_msg.pose.pose.orientation.z = poses[i][2]
+            self.reset_pub_list[i].publish(pose_with_covariance_msg)
 
         # wait for the human driver to reset the car and send a message to the robot driver to
+        is_print = True
         while any(timestamp < desired_pose_sent_timestamp for timestamp in self.reset_done_timestamp_list):
+            print("reset is waiting for human driver to reset. pose has been sent through topic") if is_print else None; is_print = False
+            time.sleep(self.time_step / 100)
             pass
 
         # return the most recent observation from the robot driver
+        is_print = True
         while self.not_all_new_obs(desired_pose_sent_timestamp):
+            print("reset is waiting for the next observation") if is_print else None; is_print = False
+            time.sleep(self.time_step / 100)
             pass
 
         obs = self.build_observation(scan_list=self.last_scan_list, odom_list=self.last_odom_list)

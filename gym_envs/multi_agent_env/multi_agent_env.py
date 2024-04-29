@@ -14,6 +14,7 @@ from gym_envs.multi_agent_env.rewards import reward_fn_factory
 from gym_envs.multi_agent_env.common.termination_fn import termination_fn_factory
 from gym_envs.multi_agent_env.common.track import Track
 from f110_gym.envs import F110Env, DynamicsModel
+from gym_envs.multi_agent_env.f110_ros_wrapper import F110ROSWrapper
 
 
 def init_basic_ctrl(track, n_npcs):
@@ -78,14 +79,15 @@ class MultiAgentRaceEnv(gymnasium.Env):
         seed = np.random.randint(0, 1000000) if seed is None else seed
 
         # create simulation environment
-        self.env = F110Env(
-            map=self._track.filepath,
-            map_ext=self._track.ext,
-            params=sim_params["params"],
-            dynamics_model=sim_params["dynamics_model"],
-            num_agents=len(self.agents_ids),
-            seed=seed,
-        )
+        # self.env = F110Env(
+        #     map=self._track.filepath,
+        #     map_ext=self._track.ext,
+        #     params=sim_params["params"],
+        #     dynamics_model=sim_params["dynamics_model"],
+        #     num_agents=len(self.agents_ids),
+        #     seed=seed,
+        # )
+        self.env = F110ROSWrapper()
 
         # reset fns
         self.reset_fns = {
@@ -102,8 +104,12 @@ class MultiAgentRaceEnv(gymnasium.Env):
         # reward fn
         self.reward_fn = reward_fn_factory(self, **reward_params)
 
-        self._scan_size = self.env.sim.agents[0].scan_simulator.num_beams
-        self._scan_range = self.env.sim.agents[0].scan_simulator.max_range
+        try:
+            self._scan_size = self.env.sim.agents[0].scan_simulator.num_beams
+            self._scan_range = self.env.sim.agents[0].scan_simulator.max_range
+        except:
+            self._scan_size = 1080
+            self._scan_range = 30
 
         # keep state for playing npcs
         self._step = 0
@@ -134,10 +140,14 @@ class MultiAgentRaceEnv(gymnasium.Env):
             }
         )
 
-        steering_low, steering_high = (
-            self.env.sim.params["s_min"],
-            self.env.sim.params["s_max"],
-        )
+        try:
+            steering_low, steering_high = (
+                self.env.sim.params["s_min"],
+                self.env.sim.params["s_max"],
+            )
+        except:
+            steering_low, steering_high = -0.4189, 0.4189
+
         velocity_low, velocity_high = 0.0, 10.0
         self.action_space = gymnasium.spaces.Dict(
             {
@@ -156,7 +166,7 @@ class MultiAgentRaceEnv(gymnasium.Env):
         if self.render_mode == "human_fast":
             self.metadata["render_fps"] *= 10  # boost fps by 10x
         self.renderer, self.render_spec = make_renderer(
-            params=self.params,
+            params=self._params,
             track=self.track,
             agent_ids=self.agents_ids,
             render_mode=render_mode,
@@ -407,7 +417,6 @@ class MultiAgentRaceEnv(gymnasium.Env):
         original_obs, reward, done, original_info = self.env.reset(
             poses=np.array(poses)
         )
-        breakpoint()
 
         # update observations and internal variables
         self._last_frenet_s = {
