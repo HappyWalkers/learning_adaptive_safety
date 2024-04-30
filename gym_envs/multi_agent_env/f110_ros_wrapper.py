@@ -148,11 +148,9 @@ class F110ROSWrapper(Node):
             self.drive_pub_list[i].publish(drive_msg)
 
         # wait for the next observation from each agent
-        is_print = True
+        print("step is waiting for the next observation")
         while self.not_all_new_obs(action_sent_timestamp):
-            print("step is waiting for the next observation") if is_print else None; is_print = False
-            time.sleep(self.time_step / 100)
-            pass
+            rclpy.spin_once(self, timeout_sec=self.time_step / 100)
 
         # build the returned values
         obs = self.build_observation(scan_list=self.last_scan_list, odom_list=self.last_odom_list)
@@ -246,19 +244,15 @@ class F110ROSWrapper(Node):
             time.sleep(0.01) # ROS may limit the frequency of publishing messages
             
 
-        # wait for the human driver to reset the car and send a message to the robot driver to
-        is_print = True
+        # wait for the human driver to reset the car and send a message to the robot driver
+        print("reset is waiting for human driver to reset. pose has been sent through topic")
         while any(timestamp < desired_pose_sent_timestamp for timestamp in self.reset_done_timestamp_list):
-            print("reset is waiting for human driver to reset. pose has been sent through topic") if is_print else None; is_print = False
-            time.sleep(self.time_step / 100)
-            pass
+            rclpy.spin_once(self, timeout_sec=self.time_step / 100)
 
         # return the most recent observation from the robot driver
-        is_print = True
+        print("reset is waiting for the next observation")
         while self.not_all_new_obs(desired_pose_sent_timestamp):
-            print("reset is waiting for the next observation") if is_print else None; is_print = False
-            time.sleep(self.time_step / 100)
-            pass
+            rclpy.spin_once(self, timeout_sec=self.time_step / 100)
 
         obs = self.build_observation(scan_list=self.last_scan_list, odom_list=self.last_odom_list)
         reward = self.time_step
