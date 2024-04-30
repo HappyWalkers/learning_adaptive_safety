@@ -48,6 +48,7 @@ class F110ROSWrapper(Node):
         self.ego_idx = ego_idx
         self.time_step = time_step
         self.step_counter = 0
+        self.current_time = 0.0
 
         # Create subsripters for getting observations
         self.scan_sub_list = []
@@ -105,19 +106,19 @@ class F110ROSWrapper(Node):
 
 
     def scan_callback(self, agent_idx: int):
-        def scan_callback(self, scan_msg: LaserScan):
+        def scan_callback(scan_msg: LaserScan):
             self.last_scan_list[agent_idx] = scan_msg
             self.last_scan_timestamp_list[agent_idx] = self.get_clock().now()
         return scan_callback
     
     def odom_callback(self, agent_idx: int):
-        def odom_callback(self, odom_msg: Odometry):
+        def odom_callback(odom_msg: Odometry):
             self.last_odom_list[agent_idx] = odom_msg
             self.last_odom_timestamp_list[agent_idx] = self.get_clock().now()
         return odom_callback
     
     def reset_done_callback(self, agent_idx: int):
-        def reset_done_callback(self, reset_done_msg: Bool):
+        def reset_done_callback(reset_done_msg: Bool):
             self.reset_done_status_list[agent_idx] = reset_done_msg
             self.reset_done_timestamp_list[agent_idx] = self.get_clock().now()
         return reset_done_callback
@@ -137,6 +138,7 @@ class F110ROSWrapper(Node):
             info (dict): auxillary information dictionary
         """
         self.step_counter += 1
+        self.current_time = self.step_counter * self.time_step
 
         # send action to each agent
         action_sent_timestamp = self.get_clock().now()
@@ -148,7 +150,7 @@ class F110ROSWrapper(Node):
             self.drive_pub_list[i].publish(drive_msg)
 
         # wait for the next observation from each agent
-        print("step is waiting for the next observation")
+        # print("step is waiting for the next observation")
         while self.not_all_new_obs(action_sent_timestamp):
             rclpy.spin_once(self, timeout_sec=self.time_step / 100)
 
@@ -156,7 +158,9 @@ class F110ROSWrapper(Node):
         obs = self.build_observation(scan_list=self.last_scan_list, odom_list=self.last_odom_list)
         reward = 0
         done = False
-        info = {}
+        info = {
+            'checkpoint_done': np.array([False for _ in range(self.num_agents)]),
+        }
         return obs, reward, done, info
 
     def not_all_new_obs(self, action_sent_timestamp):
@@ -187,8 +191,8 @@ class F110ROSWrapper(Node):
             'poses_x': [odom.pose.pose.position.x for odom in odom_list],
             'poses_y': [odom.pose.pose.position.y for odom in odom_list],
             'poses_theta': [odom.pose.pose.orientation.z for odom in odom_list],
-            'linear_vels_x': [odom.twist.twist.linear.x for odom in odom_list],
-            'linear_vels_y': [odom.twist.twist.linear.y for odom in odom_list],
+            'linear_vels_x': [np.float64(odom.twist.twist.linear.x) for odom in odom_list],
+            'linear_vels_y': [np.float64(odom.twist.twist.linear.y) for odom in odom_list],
             'ang_vels_z': [odom.twist.twist.angular.z for odom in odom_list],
             'collisions': np.zeros(self.num_agents),
             'lap_times': self.step_counter * np.ones(self.num_agents),
@@ -215,7 +219,7 @@ class F110ROSWrapper(Node):
             done (bool): if the simulation is done
             info (dict): auxillary information dictionary
         """
-        self.step_counter += 1
+        self.step_counter = 0 
 
         # send stop command to each agent
         for i in range(self.num_agents):
@@ -244,10 +248,10 @@ class F110ROSWrapper(Node):
             time.sleep(0.01) # ROS may limit the frequency of publishing messages
             
 
-        # wait for the human driver to reset the car and send a message to the robot driver
-        print("reset is waiting for human driver to reset. pose has been sent through topic")
-        while any(timestamp < desired_pose_sent_timestamp for timestamp in self.reset_done_timestamp_list):
-            rclpy.spin_once(self, timeout_sec=self.time_step / 100)
+        # # wait for the human driver to reset the car and send a message to the robot driver
+        # print("reset is waiting for human driver to reset. pose has been sent through topic")
+        # while any(timestamp < desired_pose_sent_timestamp for timestamp in self.reset_done_timestamp_list):
+        #     rclpy.spin_once(self, timeout_sec=self.time_step / 100)
 
         # return the most recent observation from the robot driver
         print("reset is waiting for the next observation")
@@ -257,5 +261,7 @@ class F110ROSWrapper(Node):
         obs = self.build_observation(scan_list=self.last_scan_list, odom_list=self.last_odom_list)
         reward = self.time_step
         done = False
-        info = {}
+        info = {
+            'checkpoint_done': np.array([False for _ in range(self.num_agents)]),
+        }
         return obs, reward, done, info
