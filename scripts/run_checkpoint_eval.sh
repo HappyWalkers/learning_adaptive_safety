@@ -43,6 +43,7 @@ exp=${env_id}_static_eval_n${neps}_gammas${ming}-${maxg}-${ng}_cbf${cbf_type}_us
 cmd="
 python ${script} --outdir ${logdir} --n-episodes ${neps} --checkpoints ${checkpoint} \
             --grid-params ${grid_params} --seed ${seed} ${env_id} --plot default \
+
 "
 
 echo $cmd

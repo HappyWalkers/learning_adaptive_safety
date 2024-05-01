@@ -6,7 +6,7 @@ n_steps=1024000
 args=(
   # n-runs total-timesteps env-id num-envs use-cbf use-ctrl cost-limit
   #
-  "1 ${n_steps} f110-multi-agent-v1 12 True True 0.25"
+  "1 ${n_steps} f110-multi-agent-v1 1 True True 0.25"
   # "1 ${n_steps} particle-env-v1 4 True True 0.25"
 )
 

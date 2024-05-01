@@ -38,6 +38,7 @@ class F110ROSWrapper(Node):
             reset_topic_list = ['/initialpose', '/goal_pose'],
             reset_done_topic_list = ['/reset_done', '/opp_reset_done'],
             time_step = 0.01,
+            params = None,
             ):
         super().__init__('f110_ros_wrapper')
 
@@ -49,6 +50,7 @@ class F110ROSWrapper(Node):
         self.time_step = time_step
         self.step_counter = 0
         self.current_time = 0.0
+        self.params = params
 
         # Create subsripters for getting observations
         self.scan_sub_list = []

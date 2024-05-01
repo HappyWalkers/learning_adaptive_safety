@@ -87,7 +87,7 @@ class MultiAgentRaceEnv(gymnasium.Env):
         #     num_agents=len(self.agents_ids),
         #     seed=seed,
         # )
-        self.env = F110ROSWrapper()
+        self.env = F110ROSWrapper(params=sim_params["params"])
 
         # reset fns
         self.reset_fns = {
@@ -166,7 +166,7 @@ class MultiAgentRaceEnv(gymnasium.Env):
         if self.render_mode == "human_fast":
             self.metadata["render_fps"] *= 10  # boost fps by 10x
         self.renderer, self.render_spec = make_renderer(
-            params=self._params,
+            params=self.params,
             track=self.track,
             agent_ids=self.agents_ids,
             render_mode=render_mode,
