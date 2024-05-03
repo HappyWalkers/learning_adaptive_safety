@@ -22,6 +22,7 @@ from config import Config
 from rclpy.node import Node
 from geometry_msgs.msg import Pose, PoseArray
 from geometry_msgs.msg import Quaternion
+from geometry_msgs.msg import PoseStamped
 
 
 @njit(fastmath=False, cache=True)
@@ -91,6 +92,7 @@ class PurePursuitPlanner(Planner):
 
         self.node = Node("pure_pursuit_planner")
         self.path_publisher = self.node.create_publisher(PoseArray, 'waypoints', 10)
+        self.tracking_point_publisher = self.node.create_publisher(PoseStamped, 'tracking_point', 10)
 
     def reset(self, **kwargs):
         if "vgain" in kwargs:
@@ -187,6 +189,7 @@ class PurePursuitPlanner(Planner):
         )
 
         self.publish_waypoints(self.waypoints)
+        self.publish_waypoint(lookahead_point)
 
         return {"steering": steering, "velocity": speed}
     
@@ -204,6 +207,19 @@ class PurePursuitPlanner(Planner):
             msg.poses.append(pose)
         
         self.path_publisher.publish(msg)
+
+    
+    def publish_waypoint(self, waypoint):
+        msg = PoseStamped()
+        msg.header.stamp = self.node.get_clock().now().to_msg()
+        msg.header.frame_id = "map"
+
+        msg.pose.position.x = float(waypoint[0])
+        msg.pose.position.y = float(waypoint[1])
+        msg.pose.position.z = 0.0
+        msg.pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+
+        self.tracking_point_publisher.publish(msg)
 
 class AdvancedPurePursuitPlanner(PurePursuitPlanner):
     def __init__(

@@ -197,7 +197,7 @@ class F110ROSWrapper(Node):
             'linear_vels_y': [np.float64(odom.twist.twist.linear.y) for odom in odom_list],
             'ang_vels_z': [odom.twist.twist.angular.z for odom in odom_list],
             'collisions': np.zeros(self.num_agents),
-            'lap_times': self.step_counter * np.ones(self.num_agents),
+            'lap_times': self.current_time * np.ones(self.num_agents),
             'lap_counts': np.zeros(self.num_agents)
         }
         return obs
