@@ -19,6 +19,9 @@ except:
     pass
 
 from config import Config
+from rclpy.node import Node
+from geometry_msgs.msg import Pose, PoseArray
+from geometry_msgs.msg import Quaternion
 
 
 @njit(fastmath=False, cache=True)
@@ -85,6 +88,9 @@ class PurePursuitPlanner(Planner):
 
         self.drawn_waypoints = []
         self.render_waypoints_rgb = render_wps_rgb
+
+        self.node = Node("pure_pursuit_planner")
+        self.path_publisher = self.node.create_publisher(PoseArray, 'waypoints', 10)
 
     def reset(self, **kwargs):
         if "vgain" in kwargs:
@@ -180,8 +186,24 @@ class PurePursuitPlanner(Planner):
             max(steering, -self.params["max_steering"]), self.params["max_steering"]
         )
 
-        return {"steering": steering, "velocity": speed}
+        self.publish_waypoints(self.waypoints)
 
+        return {"steering": steering, "velocity": speed}
+    
+    def publish_waypoints(self, waypoints):
+        msg = PoseArray()
+        msg.header.stamp = self.node.get_clock().now().to_msg()
+        msg.header.frame_id = "map"
+        
+        for x, y, z in waypoints:
+            pose = Pose()
+            pose.position.x = x
+            pose.position.y = y
+            pose.position.z = 0.0
+            pose.orientation = Quaternion(x=0.0, y=0.0, z=0.0, w=1.0)
+            msg.poses.append(pose)
+        
+        self.path_publisher.publish(msg)
 
 class AdvancedPurePursuitPlanner(PurePursuitPlanner):
     def __init__(
