@@ -9,6 +9,7 @@ from std_msgs.msg import Bool
 from typing import List
 import numpy as np
 import time
+from scipy.spatial.transform import Rotation
 
 
 rclpy.init()
@@ -187,12 +188,20 @@ class F110ROSWrapper(Node):
             'lap_counts': array([0., 0.])
         }
         '''
+        # calculate yaw angle using the quaternion in odom
+        yaw_list = []
+        for odom in odom_list:
+            quat = [odom.pose.pose.orientation.x, odom.pose.pose.orientation.y, odom.pose.pose.orientation.z, odom.pose.pose.orientation.w]
+            r = Rotation.from_quat(quat)
+            euler = r.as_euler('zyx', degrees=False)
+            yaw_list.append(euler[0])
+    
         obs = {
             'ego_idx': self.ego_idx,
             'scans': [np.array(scan.ranges) for scan in scan_list],
             'poses_x': [odom.pose.pose.position.x for odom in odom_list],
             'poses_y': [odom.pose.pose.position.y for odom in odom_list],
-            'poses_theta': [odom.pose.pose.orientation.z for odom in odom_list],
+            'poses_theta': yaw_list,
             'linear_vels_x': [np.float64(odom.twist.twist.linear.x) for odom in odom_list],
             'linear_vels_y': [np.float64(odom.twist.twist.linear.y) for odom in odom_list],
             'ang_vels_z': [odom.twist.twist.angular.z for odom in odom_list],
