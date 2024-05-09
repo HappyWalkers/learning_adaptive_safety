@@ -33,7 +33,8 @@ class F110ROSWrapper(Node):
             self,
             num_agents = 2,
             ego_idx = 0,
-            odom_topic_list = ['/ego_racecar/odom', '/opp_racecar/odom'],
+            # odom_topic_list = ['/ego_racecar/odom', '/opp_racecar/odom'],
+            odom_topic_list = ['/pf/pose/odom', '/opp_racecar/odom'],
             scan_topic_list = ['/scan', '/opp_scan'],
             drive_topic_list = ['/drive', '/opp_drive'],
             reset_topic_list = ['/initialpose', '/goal_pose'],
@@ -239,24 +240,24 @@ class F110ROSWrapper(Node):
             drive_msg.drive.speed = 0.0
             self.drive_pub_list[i].publish(drive_msg)
 
-        # send the desired pose to the human driver
-        desired_pose_sent_timestamp = self.get_clock().now()
-        for i in range(self.num_agents):
-            if i == self.ego_idx:
-                pose_with_covariance_msg = PoseWithCovarianceStamped()
-                pose_with_covariance_msg.header.stamp = self.get_clock().now().to_msg()
-                pose_with_covariance_msg.pose.pose.position.x = -3.0
-                pose_with_covariance_msg.pose.pose.position.y = 0.0
-                pose_with_covariance_msg.pose.pose.orientation.z = poses[i][2]
-                self.reset_pub_list[i].publish(pose_with_covariance_msg)
-            else:
-                pose_msg = PoseStamped()
-                pose_msg.header.stamp = self.get_clock().now().to_msg()
-                pose_msg.pose.position.x = poses[i][0]
-                pose_msg.pose.position.y = poses[i][1]
-                pose_msg.pose.orientation.z = poses[i][2]
-                self.reset_pub_list[i].publish(pose_msg)
-            time.sleep(0.01) # ROS may limit the frequency of publishing messages
+        # # send the desired pose to the human driver
+        # desired_pose_sent_timestamp = self.get_clock().now()
+        # for i in range(self.num_agents):
+        #     if i == self.ego_idx:
+        #         pose_with_covariance_msg = PoseWithCovarianceStamped()
+        #         pose_with_covariance_msg.header.stamp = self.get_clock().now().to_msg()
+        #         pose_with_covariance_msg.pose.pose.position.x = -3.0
+        #         pose_with_covariance_msg.pose.pose.position.y = 0.0
+        #         pose_with_covariance_msg.pose.pose.orientation.z = poses[i][2]
+        #         self.reset_pub_list[i].publish(pose_with_covariance_msg)
+        #     else:
+        #         pose_msg = PoseStamped()
+        #         pose_msg.header.stamp = self.get_clock().now().to_msg()
+        #         pose_msg.pose.position.x = poses[i][0]
+        #         pose_msg.pose.position.y = poses[i][1]
+        #         pose_msg.pose.orientation.z = poses[i][2]
+        #         self.reset_pub_list[i].publish(pose_msg)
+        #     time.sleep(0.01) # ROS may limit the frequency of publishing messages
             
 
         # # wait for the human driver to reset the car and send a message to the robot driver
@@ -264,10 +265,10 @@ class F110ROSWrapper(Node):
         # while any(timestamp < desired_pose_sent_timestamp for timestamp in self.reset_done_timestamp_list):
         #     rclpy.spin_once(self, timeout_sec=self.time_step / 100)
 
-        # return the most recent observation from the robot driver
-        print("reset is waiting for the next observation")
-        while self.not_all_new_obs(desired_pose_sent_timestamp):
-            rclpy.spin_once(self, timeout_sec=self.time_step / 100)
+        # # return the most recent observation from the robot driver
+        # print("reset is waiting for the next observation")
+        # while self.not_all_new_obs(desired_pose_sent_timestamp):
+        #     rclpy.spin_once(self, timeout_sec=self.time_step / 100)
 
         obs = self.build_observation(scan_list=self.last_scan_list, odom_list=self.last_odom_list)
         reward = self.time_step

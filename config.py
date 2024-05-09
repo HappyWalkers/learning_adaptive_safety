@@ -89,7 +89,8 @@ class Config:
         reset_pose_dis_min = 2.0
         reset_pose_dis_max = 2.0
 
-        timeout = 8
+        # timeout = 8
+        timeout = 1e4
 
         planning_freq = 10
 
@@ -102,11 +103,11 @@ class Config:
             "vgain": 1.0,
             "vgain_std": 0.0,
             "min_speed": 0.0,
-            "max_speed": 10.0,
+            "max_speed": 2.0,
             "max_steering": 1.0,
         }
         v_gain_and_std = [
             {'vgain': 0.7, 'vgain_std': 0.05}, 
         ]
         
-        fixed_speed = 5.0
+        fixed_speed = 1.0
